@@ -86,6 +86,13 @@ pub struct SchemaMapItem {
 pub struct SchemaMap {
   pub registry: HashMap<String, SchemaMapItem>,
 }
+
+// Fine, clippy, I'll implement Default for SchemaMap.
+impl Default for SchemaMap {
+  fn default() -> Self {
+    SchemaMap::new()
+  }
+}
 impl SchemaMap {
   pub fn new() -> Self {
     SchemaMap {
@@ -124,11 +131,44 @@ impl SchemaMap {
       error!("Unable to register a schema without `$id` property.");
     }
   }
-}
-// Fine, clippy, I'll implement Default for SchemaMap.
-impl Default for SchemaMap {
-  fn default() -> Self {
-    SchemaMap::new()
+
+  /// Get an item from the registry by its relative ID
+  ///
+  /// # Examples
+  ///
+  /// Simple happy path
+  ///
+  /// ```rust
+  /// # use bundle_schema::bundler::SchemaMap;
+  /// # let schema = serde_json::json!({
+  /// #   "$id":"https://foo.com/somelocation/schema.json",
+  /// #   "description":"I'm just a schema"
+  /// # });
+  /// # let mut registry = SchemaMap::new();
+  /// # registry.register_schema(schema.clone());
+  /// let item = registry.get("somelocation/schema.json".to_owned());
+  /// assert_eq!(item.unwrap(), &schema, "We got back the schema we registered!");
+  /// ```
+  ///
+  /// Simple record-not-found case
+  ///
+  /// ```rust
+  /// # use bundle_schema::bundler::SchemaMap;
+  /// # let schema = serde_json::json!({
+  /// #   "$id":"https://foo.com/somelocation/schema.json",
+  /// #   "description":"I'm just a schema"
+  /// # });
+  /// # let mut registry = SchemaMap::new();
+  /// # registry.register_schema(schema.clone());
+  /// let item = registry.get("somelocation/missing-value.json".to_owned());
+  /// assert!(item.is_none(), "Expected None");
+  /// ```
+  pub fn get(&self, which: String) -> Option<&JsonValue> {
+    if let Some(item) = self.registry.get(&which) {
+      return Some(&item.node);
+    }
+
+    None
   }
 }
 
